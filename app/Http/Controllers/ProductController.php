@@ -72,26 +72,28 @@ class ProductController extends Controller
             }  
         }
 
+
+        $pictureKeys = ['picture0', 'picture1', 'picture2', 'picture3'];
         $picturePaths = [];
-            if ($request->hasFile('pictures')) {
-                foreach ($request->file('pictures') as $picture) {
-                    $path = $picture->store('products', 'public'); 
-                    // $picturePaths[] = str_replace('public/', 'storage/', $path); // Store path for later retrieval
-                    $picturePaths[] = $path;
-                }
-            }
 
+        foreach ($pictureKeys as $key) {
+            if ($request->hasFile($key)) {
+                $path = $request->file($key)->store('products', 'public');
+                $picturePaths[] = $path;
 
-            foreach ($picturePaths as $path) {
                 Picture::create([
                     'product_id' => $productId,
-                    'picture' => $path
+                    'picture' => $path,
                 ]);
             }
+        }
+
+        
 
         DB::commit();
 
         return response()->json([
+            'pictures'=>$picturePaths,
             'product' => $product,
             'message' => 'Product created successfully.',
         ], 201);
@@ -104,15 +106,50 @@ class ProductController extends Controller
     
 }
 
+public function get_all_products()
+{
+    // Retrieve products with their associated pictures' paths
+    $products = Product::with('pictures')->get()->map(function ($product) {
+        // Extract the picture paths from the product's pictures relationship
+        $picturePaths = $product->pictures->pluck('picture')->toArray();
+        // Merge the picture paths with all product attributes
+        return array_merge($product->toArray(), ['pictures' => $picturePaths]);
+    });
 
-    public function get_all_products()
-    {
-        $products = Product::all();
+    return response()->json([
+        'products' => $products,
+    ], 200);
+}
 
-        return response()->json([
-            'products' => $products,
-        ], 200);
-    }
+
+public function get_products_by_category($category_id)
+{
+    $products = Product::where('category_id', $category_id)
+                        ->with('pictures')
+                        ->get()
+                        ->map(function ($product) {
+                            // Extract the picture paths from the product's pictures relationship
+                            $picturePaths = $product->pictures->pluck('picture')->toArray();
+                            // Merge the picture paths with all product attributes
+                            return array_merge($product->toArray(), ['pictures' => $picturePaths]);
+                        });
+
+    return response()->json([
+        'products' => $products,
+    ], 200);
+}
+
+
+
+// public function get_all_products()
+// {
+//     // Eager load the 'pictures' relationship with the products
+//     $products = Product::with('pictures')->get();
+
+//     return response()->json([
+//         'products' => $products,
+//     ], 200);
+// }
     
 
     public function update(Request $request ,string $product_id)
@@ -137,5 +174,56 @@ class ProductController extends Controller
             'message' => 'product updated'
         ], 200);
     }
+
+    public function delete_product($id)
+{
+    DB::beginTransaction();
+
+    try {
+        // Find the product by ID
+        $product = Product::find($id);
+
+        if (!$product) {
+            return response()->json(['message' => 'Product not found.'], 404);
+        }
+
+        // // Get the picture paths
+        // $picturePaths = $product->pictures->pluck('picture');
+
+        // // Delete associated pictures from storage
+        // foreach ($picturePaths as $path) {
+        //     Storage::disk('public')->delete($path);
+        // }
+
+        // Delete associated picture records
+        $product->pictures()->delete();
+
+        // Delete associated options
+        $product->options()->delete();
+
+        // Delete the product
+        $product->delete();
+
+        DB::commit();
+
+        return response()->json(['message' => 'Product deleted successfully.'], 200);
+    } catch (\Exception $e) {
+        DB::rollback();
+        return response()->json(['message' => 'Failed to delete product.'], 500);
+    }
+}
+
+public function count_products()
+{
+    try {
+       
+        $count = Product::count();
+
+        return response()->json(['count' => $count], 200);
+    } catch (\Exception $e) {
+        return response()->json(['message' => 'Failed to count products.'], 500);
+    }
+}
+
 
 }

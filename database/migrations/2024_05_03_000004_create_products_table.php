@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('brand')->nullable();
             $table->float('price');
-            $table->float('onsale_price');
+            $table->float('onsale_price')->nullable();
             $table->dateTime('created_at');
             $table->integer('purchase_nbr')->default(0);
             $table->foreignId('category_id')->constrained('categories')->onDelete('cascade'); 

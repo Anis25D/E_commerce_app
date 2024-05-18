@@ -41,6 +41,9 @@ Route::prefix('product')->controller(ProductController::class)->group(function()
     Route::post('/create', 'create_product');
     Route::get('/getAll', 'get_all_products');
     Route::post('/update/{product_id}', 'get_all_products');
+    Route::get('/getByCategory/{category_id}', 'get_products_by_category');
+    Route::get('/countProducts', 'count_products');
+    Route::delete('/delete/{id}', 'delete_product');
 
 });
 

@@ -223,25 +223,64 @@ public function registerCustomer(Request $request)
     }
 }
 
-    public function login(Request $request){
-        $credentials = $request->only(['email','password']);
-        
-        if(!Auth::attempt($credentials)){
-            return response()->json([
-                'error'=>'invalid credentials'
-            ],401);
-        }
 
-        $user = Auth::user();
-        $token = $user->createToken($request->email)->plainTextToken;
-        $role = $user->role;
-
+public function login(Request $request)
+{
+    $credentials = $request->only(['email', 'password']);
+    
+    if (!Auth::attempt($credentials)) {
         return response()->json([
-            'token'=>$token,
-            'user'=>$user,
-            'role'=>$role
-        ]);
+            'error' => 'invalid credentials'
+        ], 401);
     }
+
+    $user = Auth::user();
+    $token = $user->createToken($request->email)->plainTextToken;
+    $role = $user->role;
+
+    $additionalData = [];
+
+    if ($role == 'seller') {
+        $seller = Seller::where('user_id', $user->id)->first();
+        if ($seller) {
+            $additionalData['role_id'] = $seller->id;
+        }
+    } elseif ($role == 'customer') {
+        $customer = Customer::where('user_id', $user->id)->first();
+        if ($customer) {
+            $additionalData['role_id'] = $customer->id;
+        }
+    }
+
+    return response()->json(array_merge([
+        'token' => $token,
+        'user' => $user,
+        'role' => $role
+    ], $additionalData));
+}
+
+
+
+
+    // public function login(Request $request){
+    //     $credentials = $request->only(['email','password']);
+        
+    //     if(!Auth::attempt($credentials)){
+    //         return response()->json([
+    //             'error'=>'invalid credentials'
+    //         ],401);
+    //     }
+
+    //     $user = Auth::user();
+    //     $token = $user->createToken($request->email)->plainTextToken;
+    //     $role = $user->role;
+
+    //     return response()->json([
+    //         'token'=>$token,
+    //         'user'=>$user,
+    //         'role'=>$role
+    //     ]);
+    // }
 
     public function logout(Request $request){
         $request->user()->currentAccessToken()->delete();
