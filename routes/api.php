@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\OrderController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\UserController;
@@ -42,6 +43,7 @@ Route::prefix('product')->controller(ProductController::class)->group(function()
     Route::get('/getAll', 'get_all_products');
     Route::post('/update/{product_id}', 'get_all_products');
     Route::get('/getByCategory/{category_id}', 'get_products_by_category');
+    Route::get('/get/{product_id}', 'get_product');
     Route::get('/countProducts', 'count_products');
     Route::delete('/delete/{id}', 'delete_product');
 
@@ -55,12 +57,21 @@ Route::prefix('Category')->controller(CategoryController::class)->group(function
 });
 
 
+Route::prefix('order')->controller(OrderController::class)->group(function() {
+    Route::post('/create', 'create_order' );
+    Route::post('/createOrder', 'createOrder' );
+    Route::get('/getBySeller/{seller_id}', 'getOrdersBySellerId');
+});
+
+
 
 
 Route::prefix('admin')->controller(AdminController::class)->group(function() {
     Route::get('/getUsers', 'get_users');
     Route::get('/getSellers', 'get_sellers');
     Route::get('/getCustomers', 'get_customers');
+    Route::get('/getOrders', 'get_orders');
+    Route::get('/getOrdersByStatus/{status}', 'get_orders_by_status');
     Route::get('/getNotifications', 'get_notifications');
     Route::put('/seeAllNotifications', 'mark_notifications_seen');
     Route::get('/getUser/{id}', 'get_user');

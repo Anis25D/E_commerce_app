@@ -195,13 +195,10 @@ public function get_products_by_category($category_id)
         //     Storage::disk('public')->delete($path);
         // }
 
-        // Delete associated picture records
         $product->pictures()->delete();
 
-        // Delete associated options
         $product->options()->delete();
 
-        // Delete the product
         $product->delete();
 
         DB::commit();
@@ -222,6 +219,28 @@ public function count_products()
         return response()->json(['count' => $count], 200);
     } catch (\Exception $e) {
         return response()->json(['message' => 'Failed to count products.'], 500);
+    }
+}
+
+public function get_product($id)
+{
+    try {
+        // Retrieve the product with associated pictures and options
+        $product = Product::with(['pictures', 'options'])->find($id);
+
+        if (!$product) {
+            return response()->json(['message' => 'Product not found.'], 404);
+        }
+
+        // Extract the picture paths from the product's pictures relationship
+        $picturePaths = $product->pictures->pluck('picture')->toArray();
+
+        // Merge the picture paths with all product attributes
+        $productData = array_merge($product->toArray(), ['pictures' => $picturePaths]);
+
+        return response()->json(['product' => $productData], 200);
+    } catch (\Exception $e) {
+        return response()->json(['message' => 'Failed to retrieve product.'], 500);
     }
 }
 

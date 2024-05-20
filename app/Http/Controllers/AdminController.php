@@ -5,23 +5,14 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Seller;
+use App\Models\Order;
 use App\Models\Notification;
 use App\Models\Customer;
 
 
 class AdminController extends Controller
 {
-    //
-
-    // public function get_users()
-    // {
-    //     $users = User::all();
-
-    //     return response()->json([
-    //         'users' => $users,
-    //     ], 200);
-    // }
-
+   
     public function get_users()
     {
         $users = User::whereIn('role', ['seller', 'customer'])
@@ -194,6 +185,58 @@ public function mark_notifications_seen(Request $request)
     Notification::where('user_id', $adminUserId)->update(['status' => 'seen']);
 
     return response()->json(['message' => 'Notifications marked as seen'],200);
+}
+
+ 
+
+public function get_orders(Request $request)
+{
+    // Fetch all orders with the customer relationship and eager load specific fields from the user relationship
+    $orders = Order::with(['customer.user:id,firstname,lastname,photo'])->get();
+
+    // Transform the orders data to include the desired customer info
+    $ordersData = $orders->map(function ($order) {
+        // Extract the desired user info from the loaded relationship
+        $userInfo = $order->customer->user;
+
+        // Add the user info to the order data
+        $orderData = $order->toArray();
+        $orderData['firstname'] = $userInfo->firstname;
+        $orderData['lastname'] = $userInfo->lastname;
+        $orderData['photo'] = $userInfo->photo;
+
+        return $orderData;
+    });
+
+    return response()->json(['orders' => $ordersData], 200);
+}
+public function get_orders_by_status($status)
+{
+    // Validate the status parameter
+    if (!in_array($status, ['pending', 'canceled', 'completed'])) {
+        return response()->json(['error' => 'Invalid status value'], 400);
+    }
+
+    // Fetch orders based on the status
+    $orders = Order::where('status', $status)
+        ->with(['customer.user:id,firstname,lastname,photo'])
+        ->get();
+
+    // Transform the orders data to include the desired customer info
+    $ordersData = $orders->map(function ($order) {
+        // Extract the desired user info from the loaded relationship
+        $userInfo = $order->customer->user;
+
+        // Add the user info to the order data
+        $orderData = $order->toArray();
+        $orderData['firstname'] = $userInfo->firstname;
+        $orderData['lastname'] = $userInfo->lastname;
+        $orderData['photo'] = $userInfo->photo;
+
+        return $orderData;
+    });
+
+    return response()->json(['orders' => $ordersData], 200);
 }
 
 }

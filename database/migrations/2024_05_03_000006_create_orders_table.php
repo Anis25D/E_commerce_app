@@ -18,7 +18,7 @@ return new class extends Migration
             $table->foreignId('customer_id')->constrained('customers')->onDelete('cascade'); 
             $table->float('total_price');
             $table->string('status');
-            $table->date('date');
+            $table->timestamps();
         });
 
         Schema::enableForeignKeyConstraints();

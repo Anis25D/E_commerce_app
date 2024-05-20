@@ -16,6 +16,9 @@ class OrderItem extends Model
         'prod_qte',
     ];
 
+    public $timestamps = false;
+
+
     public function order(): BelongsTo
     {
         return $this->belongsTo(Order::class);
